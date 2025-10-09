@@ -2,7 +2,7 @@
  * Assignment 3 - Main program
  */
 import { createInterface } from "node:readline/promises";
-import { MenuItem } from "./entity/MenuItem.js";
+import { MenuItem } from "./entity/MenuItem.mjs";
 import { processRequest } from "./api/restaurantService.mjs";
 
 const input = process.stdin; // stdin is the keyboard

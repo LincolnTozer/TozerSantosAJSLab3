@@ -1,0 +1,19 @@
+{
+  "name": "a3_starter",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "mocha"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "chai": "^6.2.0",
+    "mocha": "^11.7.4",
+    "mongodb": "^6.20.0"
+  }
+}

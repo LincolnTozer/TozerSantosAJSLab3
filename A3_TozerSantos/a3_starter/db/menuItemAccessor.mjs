@@ -61,7 +61,15 @@ async function getAllItems() {
  * @returns {Promise<boolean>} resolves to: true if the item exists; false otherwise
  */
 async function itemExists(item) {
-    throw new Error("not implemented yet");
+    let data = await getAllItems();
+        let exists = false;
+        for (let i = 0; i < data.length; i++) {
+            if (data[i].id === item.id) {
+                exists = true;
+                break;
+            }
+        }
+        return exists;
 } // end function
 
 /**
@@ -72,7 +80,15 @@ async function itemExists(item) {
  * @returns {Promise<MenuItem>} resolves to: the matching MenuItem object; or null if the object doesn't exist
  */
 async function getItemByID(itemID) {
-    throw new Error("not implemented yet");
+    let data = await getAllItems();
+        let result = null;
+        for (let i = 0; i < data.length; i++) {
+            if (data[i].id === itemID) {
+                result = data[i];
+                break;
+            }
+        }
+        return result;
 } // end function
 
 /**
@@ -83,7 +99,21 @@ async function getItemByID(itemID) {
  * @returns {Promise<boolean>} resolves to: true if the item was added; false if the item already exists.
  */
 async function addItem(item) {
-    throw new Error("not implemented yet");
+    if (await itemExists(item)) {
+            return false;
+        }
+     try {
+        let client = await ConnectionManager.getConnection();
+        let collection = client
+            .db(Constants.DB_NAME)
+            .collection(Constants.DB_COLLECTION);
+        await collection.insertOne( { id: item.id, category: item.category, description: item.description, price: item.price, vegetarian: item.vegetarian } );
+        return true;
+    } catch (err) {
+        throw new Error("Could not complete getAllItems!\n" + err);
+    }finally {
+        await ConnectionManager.closeConnection();
+    }
 } // end function
 
 /**
@@ -94,7 +124,21 @@ async function addItem(item) {
  * @returns {Promise<boolean>} resolves to: true if the item was deleted; false if the item doesn't exist.
  */
 async function deleteItem(item) {
-    throw new Error("not implemented yet");
+    if (!(await itemExists(item))) {
+            return false;
+        }
+     try {
+        let client = await ConnectionManager.getConnection();
+        let collection = client
+            .db(Constants.DB_NAME)
+            .collection(Constants.DB_COLLECTION);
+        await collection.deleteOne({ id: item.id });
+        return true;
+    } catch (err) {
+        throw new Error(err);
+    }finally {
+        await ConnectionManager.closeConnection();
+    }
 } // end function
 
 /**
@@ -105,5 +149,20 @@ async function deleteItem(item) {
  * @returns {Promise<boolean>} resolves to: true if the item was updated; false if the item doesn't exist.
  */
 async function updateItem(item) {
-    throw new Error("not implemented yet");
+    if (!(await itemExists(item))) {
+            return false;
+        }
+     try {
+        let client = await ConnectionManager.getConnection();
+        let collection = client
+            .db(Constants.DB_NAME)
+            .collection(Constants.DB_COLLECTION);
+        await collection.updateOne({ id: item.id },
+            { $set: { category: item.category, description: item.description, price: item.price, vegetarian: item.vegetarian } });
+        return true;
+    } catch (err) {
+        throw new Error(err);
+    }finally {
+        await ConnectionManager.closeConnection();
+    }
 } // end function
