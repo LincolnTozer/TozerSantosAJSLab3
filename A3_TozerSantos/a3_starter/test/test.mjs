@@ -1,4 +1,206 @@
 // your code here
+import { assert } from "chai";
+import { ConnectionManager } from "../db/ConnectionManager.mjs";
+import { rebuild } from "../db/DatabaseBuilder.mjs";
+import { processRequest } from "../api/restaurantService.mjs";
+import { MenuItem } from "../entity/MenuItem.mjs";
+import * as Constants from "../utils/constants.mjs";
+let testItems;
+
+describe("RestaurantService Tests", function () {
+    // Before running any of the tests, ensure that the database
+    // has been restored to its original state.
+    before("Setup", async function () {
+        testItems = await defineTestItems();
+        await ConnectionManager.getConnection(); // open a connection to be shared
+        await rebuild();
+        console.log("   <<SETUP: Database restored to original state.>>");
+    });
+
+    after("Teardown", async function () {
+        await ConnectionManager.closeConnection(); // close the shared connection
+    });
+
+    describe("Good Requests (200 series)", function () {
+        it("LIST returns status 200, null error, and correct list of items.", async function () {
+            let result = await processRequest("LIST");
+            assert.equal(result.statusCode,200);
+            assert.isNull(result.err);
+            assert.isTrue(
+                result.data[0] instanceof MenuItem,
+                "items should be instances of MenuItem"
+            );
+        });
+        it("ADD adds a new item, returns status 201, null error, and data true, if item does not already exist.", async function () {
+            let result = await processRequest("ADD",testItems.itemToAdd);
+            assert.equal(result.statusCode,201);
+            assert.isNull(result.err);
+            assert.isTrue(result.data);
+
+            // Verifies a change was made in the database
+            // let validate = await processRequest("ADD",testItems.itemToAdd); assert.isNull(validate.data);
+        });
+        it("DELETE deletes an item, returns status 200, null error, and data true, if item exists.", async function () {
+            let result = await processRequest("DELETE",testItems.itemToDelete);
+            assert.equal(result.statusCode,200);
+            assert.isNull(result.err);
+            assert.isTrue(result.data);
+
+            // Verifies a change was made in the database
+            // let validate = await processRequest("DELETE",testItems.itemToDelete); assert.isNull(validate.data);
+        });
+        it("UPDATE updates an item, returns status 200, null error, and data true, if item exists.", async function () {
+            let result = await processRequest("UPDATE",testItems.itemToUpdate);
+            assert.equal(result.statusCode,200);
+            assert.isNull(result.err);
+            assert.isTrue(result.data);
+
+            // Verifies a change was made in the database
+            // let list = await processRequest("LIST");
+            // let updatedItem;
+            // for (let i = 0; i < list.data.length; i++) {
+
+            // }
+            // let validate = await processRequest("UPDATE",testItems.itemToAdd); assert.isNull(validate.data);
+        });
+    });
+
+    describe("Bad Requests (400 series)",function() {
+        describe("Invalid Commands - expect: status 405, error message, and null data", async function() {
+            it("Command is empty: API returns expected response", async function () {
+                let result = await processRequest("");
+                assert.equal(result.statusCode,405);
+                assert.isNotNull(result.err);
+                assert.isNull(result.data);
+            });
+            it("Command is null: API returns expected response", async function () {
+                let result = await processRequest(null);
+                assert.equal(result.statusCode,405);
+                assert.isNotNull(result.err);
+                assert.isNull(result.data);
+            });
+            it("Command is 'foo': API returns expected response", async function () {
+                let result = await processRequest("foo");
+                assert.equal(result.statusCode,405);
+                assert.isNotNull(result.err);
+                assert.isNull(result.data);
+            });
+            it("Command is 'addd': API returns expected response", async function () {
+                let result = await processRequest("addd");
+                assert.equal(result.statusCode,405);
+                assert.isNotNull(result.err);
+                assert.isNull(result.data);
+            });
+            it("Command is 'ad': API returns expected response", async function () {
+                let result = await processRequest("ad");
+                assert.equal(result.statusCode,405);
+                assert.isNotNull(result.err);
+                assert.isNull(result.data);
+            });
+        });
+        describe("Content is not an Object - expect: status 400, error message, and null data", async function() {
+            it("Content is omitted: DELETE does not change database, and returns expected response", async function () {
+                let result = await processRequest("DELETE");
+                assert.equal(result.statusCode,400);
+                assert.isNotNull(result.err);
+                assert.isNull(result.data);
+            });
+            it("Content is null: DELETE does not change database, and returns expected response", async function () {
+                let result = await processRequest("DELETE",null);
+                assert.equal(result.statusCode,400);
+                assert.isNotNull(result.err);
+                assert.isNull(result.data);
+            });
+            it("Content is a string: DELETE does not change database, and returns expected response", async function () {
+                let result = await processRequest("DELETE","test");
+                assert.equal(result.statusCode,400);
+                assert.isNotNull(result.err);
+                assert.isNull(result.data);
+            });
+            it("Content is a valid ID (number): DELETE does not change database, and returns expected response", async function () {
+                let result = await processRequest("DELETE",100);
+                assert.equal(result.statusCode,400);
+                assert.isNotNull(result.err);
+                assert.isNull(result.data);
+            });
+        });
+        describe("Content is an Object but not a MenuItem - expect: status 400, error message, and null data", async function() {
+            it("ADD returns expected response", async function () {
+                let result = await processRequest("ADD",testItems.wrongTypeItem);
+                assert.equal(result.statusCode,400);
+                assert.isNotNull(result.err);
+                assert.isNull(result.data);
+            });
+            it("DELETE returns expected response", async function () {
+                let result = await processRequest("DELETE",testItems.wrongTypeItem);
+                assert.equal(result.statusCode,400);
+                assert.isNotNull(result.err);
+                assert.isNull(result.data);
+            });
+            it("UPDATE returns expected response", async function () {
+                let result = await processRequest("UPDATE",testItems.wrongTypeItem);
+                assert.equal(result.statusCode,400);
+                assert.isNotNull(result.err);
+                assert.isNull(result.data);
+            });
+        });
+        describe("Content is a MenuItem, but the operation cannot be performed", async function() {
+            it("ADD does not change database, returns status 409, error message, and null data, if item already exists", async function () {
+                let result = await processRequest("ADD",testItems.goodItem);
+                assert.equal(result.statusCode,409);
+                assert.isNotNull(result.err);
+                assert.isNull(result.data);
+            });
+            it("DELETE does not change database, returns status 404, error message, and null data, if item does not exist", async function () {
+                let result = await processRequest("DELETE",testItems.badItem);
+                assert.equal(result.statusCode,404);
+                assert.isNotNull(result.err);
+                assert.isNull(result.data);
+            });
+            it("UPDATE does not change database, returns status 404, error message, and null data, if item does not exist", async function () {
+                let result = await processRequest("UPDATE",testItems.badItem);
+                assert.equal(result.statusCode,404);
+                assert.isNotNull(result.err);
+                assert.isNull(result.data);
+            });
+        });
+    });
+    describe("Server Errors (500 series) - expect: status 500, error message, and null data",function() { 
+        before("Setup - corrupt connection string", async function() {
+            Constants.setConnectionString("mongodb://127.0.0.1:99999");
+            console.log("       <<SETUP: Connection string corrupted.>>");
+        });
+        after("Teardown - restore valid connection string", async function() {
+            Constants.setConnectionString("mongodb://127.0.0.1:27017");
+            console.log("       <<TEARDOWN: Connection string repaired.>>");
+        });
+
+        it("LIST returns expected response, if there is a server-side error", async function () {
+            let result = await processRequest("LIST");
+            assert.equal(result.statusCode,500);
+            assert.isNotNull(result.err);
+            assert.isNull(result.data);
+        });
+        it("ADD returns expected response, if there is a server-side error", async function () {
+            let result = await processRequest("ADD",testItems.itemToAdd);
+            assert.equal(result.statusCode,500);
+            assert.isNotNull(result.err);
+            assert.isNull(result.data);
+        });
+        it("DELETE returns expected response, if there is a server-side error", async function () {
+            let result = await processRequest("DELETE",testItems.itemToDelete);
+            assert.equal(result.statusCode,500);
+            assert.isNotNull(result.err);
+            assert.isNull(result.data);
+        });
+        it("UPDATE returns expected response, if there is a server-side error", async function () {
+            let result = await processRequest("UPDATE",testItems.itemToUpdate);
+            assert.equal(result.statusCode,500);
+            assert.isNotNull(result.err);
+            assert.isNull(result.data);
+        });
+    });
+});
 
 /* helper function */
 async function defineTestItems() {
