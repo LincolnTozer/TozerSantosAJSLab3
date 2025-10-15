@@ -5,7 +5,7 @@ import { rebuild } from "../db/DatabaseBuilder.mjs";
 import { processRequest } from "../api/restaurantService.mjs";
 import { MenuItem } from "../entity/MenuItem.mjs";
 import * as Constants from "../utils/constants.mjs";
-import { getItemByID } from "../db/menuItemAccessor.mjs";
+import { getItemByID, itemExists } from "../db/menuItemAccessor.mjs";
 let testItems;
 
 describe("RestaurantService Tests", function () {
@@ -39,7 +39,12 @@ describe("RestaurantService Tests", function () {
             assert.isTrue(result.data);
 
             // Verifies a change was made in the database
-            let validate = await processRequest("ADD",testItems.itemToAdd); assert.isNull(validate.data);
+            // let validate = await processRequest("ADD",testItems.itemToAdd); assert.isNull(validate.data);
+            let confirm = false;
+            if (await itemExists(testItems.itemToAdd)){
+                confirm = true;
+            }
+            assert.isTrue(confirm);
         });
         it("DELETE deletes an item, returns status 200, null error, and data true, if item exists.", async function () {
             let result = await processRequest("DELETE",testItems.itemToDelete);
@@ -48,7 +53,12 @@ describe("RestaurantService Tests", function () {
             assert.isTrue(result.data);
 
             // Verifies a change was made in the database
-            let validate = await processRequest("DELETE",testItems.itemToDelete); assert.isNull(validate.data);
+            // let validate = await processRequest("DELETE",testItems.itemToDelete); assert.isNull(validate.data);
+            let confirm = true;
+            if (await itemExists(testItems.itemToDelete)){
+                confirm = false;
+            }
+            assert.isTrue(confirm);
         });
         it("UPDATE updates an item, returns status 200, null error, and data true, if item exists.", async function () {
             let result = await processRequest("UPDATE",testItems.itemToUpdate);
