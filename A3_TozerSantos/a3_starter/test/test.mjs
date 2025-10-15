@@ -40,11 +40,8 @@ describe("RestaurantService Tests", function () {
 
             // Verifies a change was made in the database
             // let validate = await processRequest("ADD",testItems.itemToAdd); assert.isNull(validate.data);
-            let confirm = false;
-            if (await itemExists(testItems.itemToAdd)){
-                confirm = true;
-            }
-            assert.isTrue(confirm);
+
+            assert.isTrue(await itemExists(testItems.itemToAdd));
         });
         it("DELETE deletes an item, returns status 200, null error, and data true, if item exists.", async function () {
             let result = await processRequest("DELETE",testItems.itemToDelete);
@@ -54,11 +51,8 @@ describe("RestaurantService Tests", function () {
 
             // Verifies a change was made in the database
             // let validate = await processRequest("DELETE",testItems.itemToDelete); assert.isNull(validate.data);
-            let confirm = true;
-            if (await itemExists(testItems.itemToDelete)){
-                confirm = false;
-            }
-            assert.isTrue(confirm);
+
+            assert.isFalse(await itemExists(testItems.itemToDelete));
         });
         it("UPDATE updates an item, returns status 200, null error, and data true, if item exists.", async function () {
             let result = await processRequest("UPDATE",testItems.itemToUpdate);
@@ -67,15 +61,11 @@ describe("RestaurantService Tests", function () {
             assert.isTrue(result.data);
 
             // Verifies a change was made in the database
-            let confirm = false;
             let item = await getItemByID(testItems.itemToUpdate.id);
-            if(item.category === testItems.itemToUpdate.category &&
-                item.description === testItems.itemToUpdate.description &&
-                item.price === testItems.itemToUpdate.price &&
-                item.vegetarian === testItems.itemToUpdate.vegetarian){
-                    confirm = true;
-            }
-            assert.isTrue(confirm);
+            assert.isTrue(item.category === testItems.itemToUpdate.category);
+            assert.isTrue(item.description === testItems.itemToUpdate.description);
+            assert.isTrue(item.price === testItems.itemToUpdate.price);
+            assert.isTrue(item.vegetarian === testItems.itemToUpdate.vegetarian);
         });
     });
 
