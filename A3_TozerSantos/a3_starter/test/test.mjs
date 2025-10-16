@@ -268,6 +268,7 @@ async function defineTestItems() {
             price: 0,
             vegetarian: false,
         },
+        // Custom objects for case 14, 15, 16 as outlinedW in AppendixToA3
         badItem14: {
             id: 999,
             category: "DES",
@@ -284,7 +285,7 @@ async function defineTestItems() {
         },
         badItem16: {
             id: 301,
-            category: "DES",
+            category: "ENT",
             description: "wrong",
             price: -1,
             vegetarian: false,
